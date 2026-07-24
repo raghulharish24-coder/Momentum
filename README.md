@@ -1,3 +1,17 @@
+# 🌱 Momentum
+
+A dark-themed habit tracker and daily scheduler with a built-in chatbot assistant. Log habits, plan your day, and stay on track — all through natural conversation.
+
+
+
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
+
+
+
+
+![Made with](https://img.shields.io/badge/made%20with-HTML%2FCSS%2FJS-34d399)
+
+
 
 ## ✨ Features
 
