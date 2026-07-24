@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Habit & Schedule Bot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>🌱 Habit & Schedule Bot</h1>
+    <p>Small wins, every single day.</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Left: Dashboard -->
+    <section class="dashboard">
+      <h2>Today's Schedule</h2>
+      <ul id="schedule-list">
+        <!-- schedule items render here -->
+      </ul>
+
+      <h2>Habits</h2>
+      <ul id="habit-list">
+        <!-- habits render here -->
+      </ul>
+    </section>
+
+    <!-- Right: Chatbot -->
+    <section class="chat-panel">
+      <div id="chat-window">
+        <div class="bot-message">Hi! Try typing "add habit reading" or "schedule 6pm gym".</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Type a message...">
+        <button id="send-btn">Send</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
