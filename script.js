@@ -116,3 +116,4 @@ chatInput.addEventListener('keypress', (e) => {
 });
 
 console.log("App loaded");
+
