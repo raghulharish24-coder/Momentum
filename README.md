@@ -1,17 +1,3 @@
-# 🌱 Momentum
-
-A dark-themed habit tracker and daily scheduler with a built-in chatbot assistant. Log habits, plan your day, and stay on track — all through natural conversation.
-
-
-
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
-
-
-
-
-![Made with](https://img.shields.io/badge/made%20with-HTML%2FCSS%2FJS-34d399)
-
-
 
 ## ✨ Features
 
@@ -21,4 +7,15 @@ A dark-themed habit tracker and daily scheduler with a built-in chatbot assistan
 - *Clean, modern dashboard* — dark UI designed to feel good to open every day
 - *Firebase-powered* — your data persists across sessions (coming in Phase 4)
 
-## 🛠️ Tech Stack…
+## 🛠️ Tech Stack
+
+- HTML5, CSS3, JavaScript (vanilla)
+- Firebase (Firestore + Auth)
+- Hosted on GitHub Pages
+
+## 🚀 Getting Started
+
+1. Clone the repo
+   ```bash
+   git clone https://github.com/yourusername/momentum.git
+   cd momentum
