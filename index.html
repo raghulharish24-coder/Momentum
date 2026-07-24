@@ -1,46 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Habit & Schedule Bot</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentum - Habit and Schedule Bot</title>
+<style>
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+}
+
+body {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+header {
+  padding: 28px 32px;
+  text-align: center;
+  border-bottom: 1px solid #334155;
+}
+
+header h1 {
+  font-size: 28px;
+  color: #34d399;
+  font-weight: 700;
+}
+
+header p {
+  color: #94a3b8;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.container {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard, .chat-panel {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.dashboard {
+  flex: 1;
+  min-width: 300px;
+}
+
+.dashboard h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #34d399;
+  margin: 16px 0 10px;
+}
+
+.dashboard h2:first-child {
+  margin-top: 0;
+}
+
+.chat-panel {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+}
+
+#chat-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 4px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bot-message, .user-message {
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  max-width: 80%;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.bot-message {
+  background: #334155;
+  color: #e2e8f0;
+  align-self: flex-start;
+}
+
+.user-message {
+  background: #34d399;
+  color: #0f172a;
+  font-weight: 500;
+  align-self: flex-end;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+#chat-input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  outline: none;
+}
+
+#send-btn {
+  padding: 12px 20px;
+  background: #34d399;
+  color: #0f172a;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 10px 12px;
+  background: #0f172a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  border-left: 3px solid #34d399;
+}
+</style>
 </head>
 <body>
 
-  <header>
-    <h1>🌱 Habit & Schedule Bot</h1>
-    <p>Small wins, every single day.</p>
-  </header>
+<header>
+  <h1>Momentum</h1>
+  <p>Small wins, every single day.</p>
+</header>
 
-  <main class="container">
+<main class="container">
 
-    <!-- Left: Dashboard -->
-    <section class="dashboard">
-      <h2>Today's Schedule</h2>
-      <ul id="schedule-list">
-        <!-- schedule items render here -->
-      </ul>
+  <section class="dashboard">
+    <h2>Today's Schedule</h2>
+    <ul id="schedule-list"></ul>
 
-      <h2>Habits</h2>
-      <ul id="habit-list">
-        <!-- habits render here -->
-      </ul>
-    </section>
+    <h2>Habits</h2>
+    <ul id="habit-list"></ul>
+  </section>
 
-    <!-- Right: Chatbot -->
-    <section class="chat-panel">
-      <div id="chat-window">
-        <div class="bot-message">Hi! Try typing "add habit reading" or "schedule 6pm gym".</div>
-      </div>
-      <div class="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Type a message...">
-        <button id="send-btn">Send</button>
-      </div>
-    </section>
+  <section class="chat-panel">
+    <div id="chat-window">
+      <div class="bot-message">Hi! Try typing add habit reading or schedule 6pm gym</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Type a message...">
+      <button id="send-btn">Send</button>
+    </div>
+  </section>
 
-  </main>
+</main>
 
-  <script src="script.js"></script>
+<script>
+var habits = [];
+var schedule = [];
+
+var chatWindow = document.getElementById('chat-window');
+var chatInput = document.getElementById('chat-input');
+var sendBtn = document.getElementById('send-btn');
+var habitList = document.getElementById('habit-list');
+var scheduleList = document.getElementById('schedule-list');
+
+function addMessage(text, sender) {
+  var msg = document.createElement('div');
+  msg.className = sender === 'user' ? 'user-message' : 'bot-message';
+  msg.textContent = text;
+  chatWindow.appendChild(msg);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function renderDashboard() {
+  habitList.innerHTML = '';
+  for (var i = 0; i < habits.length; i++) {
+    var li = document.createElement('li');
+    li.textContent = habits[i].name + ' - streak: ' + habits[i].streak;
+    habitList.appendChild(li);
+  }
+
+  scheduleList.innerHTML = '';
+  for (var j = 0; j < schedule.length; j++) {
+    var li2 = document.createElement('li');
+    li2.textContent = schedule[j].time + ' - ' + schedule[j].task;
+    scheduleList.appendChild(li2);
+  }
+}
+
+function addHabit(name) {
+  habits.push({ name: name, streak: 0, doneToday: false });
+  renderDashboard();
+  return 'Added habit: ' + name + '. Type done ' + name + ' when you complete it today.';
+}
+
+function markHabitDone(name) {
+  var habit = null;
+  for (var i = 0; i < habits.length; i++) {
+    if (habits[i].name.toLowerCase() === name.toLowerCase()) {
+      habit = habits[i];
+      break;
+    }
+  }
+  if (!habit) return 'I could not find a habit called ' + name + '. Try add habit ' + name + ' first.';
+  if (habit.doneToday) return 'You already marked ' + name + ' as done today. Keep it up!';
+  habit.doneToday = true;
+  habit.streak = habit.streak + 1;
+  renderDashboard();
+  return 'Nice work! ' + name + ' streak is now ' + habit.streak;
+}
+
+function addScheduleItem(time, task) {
+  schedule.push({ time: time, task: task });
+  schedule.sort(function(a, b) {
+    return a.time.localeCompare(b.time);
+  });
+  renderDashboard();
+  return 'Scheduled ' + task + ' at ' + time + '.';
+}
+
+function showSchedule() {
+  if (schedule.length === 0) return 'You have nothing scheduled yet. Try schedule 6pm gym.';
+  var text = 'Todays plan: ';
+  for (var i = 0; i < schedule.length; i++) {
+    text += schedule[i].time + ' - ' + schedule[i].task + '. ';
+  }
+  return text;
+}
+
+function handleMessage(rawText) {
+  var text = rawText.toLowerCase();
+
+  if (text.indexOf('add habit') === 0) {
+    var name1 = rawText.substring(10).trim();
+    if (name1 === '') return 'What habit do you want to add? Try add habit reading.';
+    return addHabit(name1);
+  }
+
+  if (text.indexOf('done') === 0) {
+    var name2 = rawText.substring(4).trim();
+    if (name2 === '') return 'Which habit is done? Try done reading.';
+    return markHabitDone(name2);
+  }
+
+  if (text.indexOf('schedule') === 0) {
+    var rest = rawText.substring(9).trim();
+    var parts = rest.split(' ');
+    var time = parts[0];
+    var task = parts.slice(1).join(' ');
+    if (!time || !task) return 'Try the format: schedule 6pm gym.';
+    return addScheduleItem(time, task);
+  }
+
+  if (text.indexOf('today') !== -1 || text.indexOf('my day') !== -1) {
+    return showSchedule();
+  }
+
+  return 'I can: add habit name, done name, schedule time task, or ask what is my day.';
+}
+
+function sendMessage() {
+  var text = chatInput.value.trim();
+  if (text === '') return;
+  addMessage(text, 'user');
+  chatInput.value = '';
+
+  setTimeout(function() {
+    var reply = handleMessage(text);
+    addMessage(reply, 'bot');
+  }, 300);
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
+</script>
+
 </body>
 </html>
