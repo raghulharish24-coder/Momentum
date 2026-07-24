@@ -1,22 +1,43 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Momentum - Habit and Schedule Bot</title>
-<style>
-* {
-  box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
-  margin: 0;
-}
+<title>Momentum</title>
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
 
-body {
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  color: #e2e8f0;
-  min-height: 100vh;
-}
+<header>
+  <h1>Momentum</h1>
+  <p>Small wins, every single day.</p>
+</header>
 
+<main class="container">
+
+  <section class="dashboard">
+    <h2>Today's Schedule</h2>
+    <ul id="schedule-list"></ul>
+
+    <h2>Habits</h2>
+    <ul id="habit-list"></ul>
+  </section>
+
+  <section class="chat-panel">
+    <div id="chat-window">
+      <div class="bot-message">Hi! Try typing add habit reading or schedule 6pm gym</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Type a message...">
+      <button id="send-btn">Send</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="script.js?v=2"></script>
+</body>
+</html>
 header {
   padding: 28px 32px;
   text-align: center;
