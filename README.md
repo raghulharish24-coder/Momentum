@@ -1,2 +1,1 @@
-# todo-list-app
-A simple todo list Application 
+A dark-themed habit tracker and daily scheduler with a built-in chatbot assistant — log habits, plan your day, and stay on track through natural conversation. Built with HTML, CSS, and JavaScript, powered by Firebase.
