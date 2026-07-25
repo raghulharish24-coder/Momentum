@@ -25,7 +25,7 @@
 
   <section class="chat-panel">
     <div id="chat-window">
-      <div class="bot-message">Hi! Try typing add habit reading or schedule 6pm gym</div>
+      <div class="bot-message">Hi! Type help to see everything I can do.</div>
     </div>
     <div class="chat-input-row">
       <input type="text" id="chat-input" placeholder="Type a message...">
@@ -35,7 +35,6 @@
 
 </main>
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -65,7 +64,6 @@ var sendBtn = document.getElementById('send-btn');
 var habitList = document.getElementById('habit-list');
 var scheduleList = document.getElementById('schedule-list');
 
-// Sign in anonymously, then load data
 auth.signInAnonymously().catch(function(error) {
   console.error('Auth error:', error);
 });
@@ -124,32 +122,77 @@ function renderDashboard() {
   }
 }
 
+function getTodayString() {
+  var d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+function findHabit(name) {
+  for (var i = 0; i < habits.length; i++) {
+    if (habits[i].name.toLowerCase() === name.toLowerCase()) return habits[i];
+  }
+  return null;
+}
+
 function addHabit(name) {
+  if (findHabit(name)) return 'You already have a habit called ' + name + '.';
   db.collection('users').doc(userId).collection('habits').add({
     name: name,
     streak: 0,
-    doneToday: false
+    lastDone: null
   });
   return 'Added habit: ' + name + '. Type done ' + name + ' when you complete it today.';
 }
 
+function deleteHabit(name) {
+  var habit = findHabit(name);
+  if (!habit) return 'I could not find a habit called ' + name + '.';
+  db.collection('users').doc(userId).collection('habits').doc(habit.id).delete();
+  return 'Removed habit: ' + name + '.';
+}
+
+function streakMessage(streak) {
+  if (streak === 3) return ' 3 days strong!';
+  if (streak === 7) return ' One full week! Great momentum.';
+  if (streak === 30) return ' 30 days! That is a real habit now.';
+  if (streak > 0 && streak % 50 === 0) return ' ' + streak + ' days. Incredible consistency.';
+  return '';
+}
+
 function markHabitDone(name) {
-  var habit = null;
-  for (var i = 0; i < habits.length; i++) {
-    if (habits[i].name.toLowerCase() === name.toLowerCase()) {
-      habit = habits[i];
-      break;
-    }
-  }
+  var habit = findHabit(name);
   if (!habit) return 'I could not find a habit called ' + name + '. Try add habit ' + name + ' first.';
-  if (habit.doneToday) return 'You already marked ' + name + ' as done today. Keep it up!';
+
+  var today = getTodayString();
+
+  if (habit.lastDone === today) {
+    return 'You already marked ' + name + ' as done today. Keep it up!';
+  }
+
+  var newStreak = habit.streak + 1;
+
+  if (habit.lastDone) {
+    var lastDate = new Date(habit.lastDone);
+    var todayDate = new Date(today);
+    var diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+    if (diffDays > 1) newStreak = 1;
+  }
 
   db.collection('users').doc(userId).collection('habits').doc(habit.id).update({
-    doneToday: true,
-    streak: habit.streak + 1
+    lastDone: today,
+    streak: newStreak
   });
 
-  return 'Nice work! ' + name + ' streak is now ' + (habit.streak + 1);
+  return 'Nice work! ' + name + ' streak is now ' + newStreak + '.' + streakMessage(newStreak);
+}
+
+function listHabits() {
+  if (habits.length === 0) return 'You have no habits yet. Try add habit reading.';
+  var text = 'Your habits: ';
+  for (var i = 0; i < habits.length; i++) {
+    text += habits[i].name + ' (' + habits[i].streak + '), ';
+  }
+  return text;
 }
 
 function addScheduleItem(time, task) {
@@ -158,6 +201,19 @@ function addScheduleItem(time, task) {
     task: task
   });
   return 'Scheduled ' + task + ' at ' + time + '.';
+}
+
+function removeScheduleItem(task) {
+  var found = null;
+  for (var i = 0; i < schedule.length; i++) {
+    if (schedule[i].task.toLowerCase().indexOf(task.toLowerCase()) !== -1) {
+      found = schedule[i];
+      break;
+    }
+  }
+  if (!found) return 'I could not find a scheduled task matching ' + task + '.';
+  db.collection('users').doc(userId).collection('schedule').doc(found.id).delete();
+  return 'Removed ' + found.task + ' from your schedule.';
 }
 
 function showSchedule() {
@@ -169,8 +225,24 @@ function showSchedule() {
   return text;
 }
 
+function showHelp() {
+  return 'Commands: add habit [name], done [name], delete habit [name], my habits, schedule [time] [task], remove schedule [task], what is my day.';
+}
+
 function handleMessage(rawText) {
-  var text = rawText.toLowerCase();
+  var text = rawText.toLowerCase().trim();
+
+  if (text === 'help') return showHelp();
+
+  if (text.indexOf('hi') === 0 || text.indexOf('hello') === 0 || text.indexOf('hey') === 0) {
+    return 'Hey! Type help to see what I can do.';
+  }
+
+  if (text.indexOf('delete habit') === 0) {
+    var dname = rawText.substring(13).trim();
+    if (!dname) return 'Which habit do you want to delete?';
+    return deleteHabit(dname);
+  }
 
   if (text.indexOf('add habit') === 0) {
     var name1 = rawText.substring(10).trim();
@@ -178,10 +250,20 @@ function handleMessage(rawText) {
     return addHabit(name1);
   }
 
+  if (text.indexOf('my habits') === 0 || text.indexOf('list habits') === 0) {
+    return listHabits();
+  }
+
   if (text.indexOf('done') === 0) {
     var name2 = rawText.substring(4).trim();
     if (name2 === '') return 'Which habit is done? Try done reading.';
     return markHabitDone(name2);
+  }
+
+  if (text.indexOf('remove schedule') === 0) {
+    var rtask = rawText.substring(16).trim();
+    if (!rtask) return 'Which scheduled task do you want to remove?';
+    return removeScheduleItem(rtask);
   }
 
   if (text.indexOf('schedule') === 0) {
@@ -197,7 +279,7 @@ function handleMessage(rawText) {
     return showSchedule();
   }
 
-  return 'I can: add habit name, done name, schedule time task, or ask what is my day.';
+  return 'I did not understand that. Type help to see available commands.';
 }
 
 function sendMessage() {
