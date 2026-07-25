@@ -35,6 +35,188 @@
 
 </main>
 
-<script src="script.js?v=2"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBct5NPU7vMVC-oRjtFxX0duLmfnb6r4WU",
+  authDomain: "momentum-23ffd.firebaseapp.com",
+  projectId: "momentum-23ffd",
+  storageBucket: "momentum-23ffd.firebasestorage.app",
+  messagingSenderId: "291885093804",
+  appId: "1:291885093804:web:458c10ceec0aa7f5e1a009",
+  measurementId: "G-NK11YYC8LM"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+let userId = null;
+let habits = [];
+let schedule = [];
+
+var chatWindow = document.getElementById('chat-window');
+var chatInput = document.getElementById('chat-input');
+var sendBtn = document.getElementById('send-btn');
+var habitList = document.getElementById('habit-list');
+var scheduleList = document.getElementById('schedule-list');
+
+// Sign in anonymously, then load data
+auth.signInAnonymously().catch(function(error) {
+  console.error('Auth error:', error);
+});
+
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    userId = user.uid;
+    loadData();
+  }
+});
+
+function loadData() {
+  db.collection('users').doc(userId).collection('habits').onSnapshot(function(snapshot) {
+    habits = [];
+    snapshot.forEach(function(doc) {
+      var data = doc.data();
+      data.id = doc.id;
+      habits.push(data);
+    });
+    renderDashboard();
+  });
+
+  db.collection('users').doc(userId).collection('schedule').onSnapshot(function(snapshot) {
+    schedule = [];
+    snapshot.forEach(function(doc) {
+      var data = doc.data();
+      data.id = doc.id;
+      schedule.push(data);
+    });
+    schedule.sort(function(a, b) { return a.time.localeCompare(b.time); });
+    renderDashboard();
+  });
+}
+
+function addMessage(text, sender) {
+  var msg = document.createElement('div');
+  msg.className = sender === 'user' ? 'user-message' : 'bot-message';
+  msg.textContent = text;
+  chatWindow.appendChild(msg);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function renderDashboard() {
+  habitList.innerHTML = '';
+  for (var i = 0; i < habits.length; i++) {
+    var li = document.createElement('li');
+    li.textContent = habits[i].name + ' - streak: ' + habits[i].streak;
+    habitList.appendChild(li);
+  }
+
+  scheduleList.innerHTML = '';
+  for (var j = 0; j < schedule.length; j++) {
+    var li2 = document.createElement('li');
+    li2.textContent = schedule[j].time + ' - ' + schedule[j].task;
+    scheduleList.appendChild(li2);
+  }
+}
+
+function addHabit(name) {
+  db.collection('users').doc(userId).collection('habits').add({
+    name: name,
+    streak: 0,
+    doneToday: false
+  });
+  return 'Added habit: ' + name + '. Type done ' + name + ' when you complete it today.';
+}
+
+function markHabitDone(name) {
+  var habit = null;
+  for (var i = 0; i < habits.length; i++) {
+    if (habits[i].name.toLowerCase() === name.toLowerCase()) {
+      habit = habits[i];
+      break;
+    }
+  }
+  if (!habit) return 'I could not find a habit called ' + name + '. Try add habit ' + name + ' first.';
+  if (habit.doneToday) return 'You already marked ' + name + ' as done today. Keep it up!';
+
+  db.collection('users').doc(userId).collection('habits').doc(habit.id).update({
+    doneToday: true,
+    streak: habit.streak + 1
+  });
+
+  return 'Nice work! ' + name + ' streak is now ' + (habit.streak + 1);
+}
+
+function addScheduleItem(time, task) {
+  db.collection('users').doc(userId).collection('schedule').add({
+    time: time,
+    task: task
+  });
+  return 'Scheduled ' + task + ' at ' + time + '.';
+}
+
+function showSchedule() {
+  if (schedule.length === 0) return 'You have nothing scheduled yet. Try schedule 6pm gym.';
+  var text = 'Todays plan: ';
+  for (var i = 0; i < schedule.length; i++) {
+    text += schedule[i].time + ' - ' + schedule[i].task + '. ';
+  }
+  return text;
+}
+
+function handleMessage(rawText) {
+  var text = rawText.toLowerCase();
+
+  if (text.indexOf('add habit') === 0) {
+    var name1 = rawText.substring(10).trim();
+    if (name1 === '') return 'What habit do you want to add? Try add habit reading.';
+    return addHabit(name1);
+  }
+
+  if (text.indexOf('done') === 0) {
+    var name2 = rawText.substring(4).trim();
+    if (name2 === '') return 'Which habit is done? Try done reading.';
+    return markHabitDone(name2);
+  }
+
+  if (text.indexOf('schedule') === 0) {
+    var rest = rawText.substring(9).trim();
+    var parts = rest.split(' ');
+    var time = parts[0];
+    var task = parts.slice(1).join(' ');
+    if (!time || !task) return 'Try the format: schedule 6pm gym.';
+    return addScheduleItem(time, task);
+  }
+
+  if (text.indexOf('today') !== -1 || text.indexOf('my day') !== -1) {
+    return showSchedule();
+  }
+
+  return 'I can: add habit name, done name, schedule time task, or ask what is my day.';
+}
+
+function sendMessage() {
+  var text = chatInput.value.trim();
+  if (text === '') return;
+  addMessage(text, 'user');
+  chatInput.value = '';
+
+  setTimeout(function() {
+    var reply = handleMessage(text);
+    addMessage(reply, 'bot');
+  }, 300);
+}
+
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') sendMessage();
+});
+</script>
+
 </body>
 </html>
